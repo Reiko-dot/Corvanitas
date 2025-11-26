@@ -1,0 +1,41 @@
+/* does this even work? */
+
+body {
+    font-family: Verdana, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    background: #D9D9D9;
+}
+
+.info-container {
+    background-color: #DAA087;
+    border: 2px solid #ffffff;
+    border-radius: 5px;
+    padding: 20px;
+    margin: 20px auto;
+    width: 80%;
+    height: 580px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+}
+
+.next-page-button {
+    display: flex;
+    float: right;
+    padding: 10px 20px;
+    background-color: #eb5931;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    font-size: 16px;
+    border-radius: 5px;
+   margin-right: 100px;
+}
+
+ul  {
+    font-size: 18px;
+    line-height: 1.6;
+    color: #ededed;
+    font-weight: bold;
+}
