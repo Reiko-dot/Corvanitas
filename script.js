@@ -1,143 +1,123 @@
-const wrapper = document.querySelector('.canvas-wrapper');
-const canvasEl = document.getElementById('canvas');
-
-const sliceWidth = 3476;
-const sliceHeight = 1507;
-const numSlices = 33;
-
-// Fabric canvas = viewport size
-const canvas = new fabric.Canvas('canvas', { selection: false });
-canvas.setWidth(window.innerWidth);
-canvas.setHeight(window.innerHeight);
+const canvas = new fabric.Canvas("panoramaCanvas", { selection: false });
 fabric.Object.prototype.objectCaching = false;
 
-let panoramaGroup = new fabric.Group([], { left: 0, top: 0, selectable: false });
+// Panorama images
+const imageOrder = Array.from({length: 33}, (_, i) => `canvas${i}.jpg`);
+
+let panoramaGroup = new fabric.Group([], { selectable: false, originX: "left", originY: "top" });
 canvas.add(panoramaGroup);
 
-// --------------------
-// Load slices
-// --------------------
-let currentX = 0;
-for (let i = 0; i < numSlices; i++) {
-  fabric.Image.fromURL(`images/canvas${i}.jpg`, img => {
-    img.set({ left: currentX, top: 0, selectable: false });
-    currentX += sliceWidth;
-    panoramaGroup.addWithUpdate(img);
-    canvas.requestRenderAll();
-  });
-}
+let normalizedHeight = 600;
+let xPos = 0;
 
-// --------------------
-// Drag & Pan
-// --------------------
-let isDragging = false;
-let lastX = 0, lastY = 0;
+// Load images
+imageOrder.forEach((file, index) => {
+    fabric.Image.fromURL("images/" + file, img => {
+        const scale = normalizedHeight / img.height;
+        img.scaleX = scale;
+        img.scaleY = scale;
+        const newWidth = img.width * scale;
 
-canvas.on('mouse:down', e => {
-  isDragging = true;
-  lastX = e.e.clientX;
-  lastY = e.e.clientY;
+        img.set({ left: xPos, top: 0, selectable: false });
+        panoramaGroup.addWithUpdate(img);
+        xPos += newWidth;
+        canvas.requestRenderAll();
+    });
 });
 
-canvas.on('mouse:move', e => {
-  if (!isDragging) return;
-  const dx = e.e.clientX - lastX;
-  const dy = e.e.clientY - lastY;
-  panoramaGroup.left += dx;
-  panoramaGroup.top += dy;
-  panoramaGroup.setCoords();
-  canvas.requestRenderAll();
-  lastX = e.e.clientX;
-  lastY = e.e.clientY;
+// Load hotspots
+hotspotsData.forEach(hs => {
+    const hotspot = new fabric.Circle({
+        left: hs.hotspot_x,
+        top: hs.hotspot_y,
+        radius: 18,
+        fill: "#ff3b3b",
+        stroke: "white",
+        strokeWidth: 3,
+        originX: "center",
+        originY: "center",
+        selectable: false
+    });
+
+    hotspot.on("mousedown", () => openColofon(hs));
+    panoramaGroup.addWithUpdate(hotspot);
 });
+canvas.requestRenderAll();
 
-canvas.on('mouse:up', () => isDragging = false);
-
-// --------------------
-// Zoom with mouse wheel
-// --------------------
-canvas.on('mouse:wheel', e => {
-  e.e.preventDefault();
-  e.e.stopPropagation();
-
-  const pointer = canvas.getPointer(e.e);
-  const zoomFactor = 1.1;
-  let zoom = e.e.deltaY < 0 ? zoomFactor : 1/zoomFactor;
-
-  // Zoom the group
-  const prevScale = panoramaGroup.scaleX;
-  panoramaGroup.scaleX *= zoom;
-  panoramaGroup.scaleY *= zoom;
-
-  // Adjust position so zoom centers on cursor
-  panoramaGroup.left -= (pointer.x - panoramaGroup.left) * (panoramaGroup.scaleX/prevScale - 1);
-  panoramaGroup.top -= (pointer.y - panoramaGroup.top) * (panoramaGroup.scaleY/prevScale - 1);
-
-  panoramaGroup.setCoords();
-  canvas.requestRenderAll();
-});
-
-// --------------------
-// Touch pinch zoom
-// --------------------
-let initialDistance = 0;
-
-canvas.upperCanvasEl.addEventListener('touchstart', e => {
-  if (e.touches.length === 2) {
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
-    initialDistance = Math.sqrt(dx*dx + dy*dy);
-  } else if (e.touches.length === 1) {
-    isDragging = true;
-    lastX = e.touches[0].clientX;
-    lastY = e.touches[0].clientY;
-  }
-});
-
-canvas.upperCanvasEl.addEventListener('touchmove', e => {
-  e.preventDefault();
-  if (e.touches.length === 2) {
-    const dx = e.touches[0].clientX - e.touches[1].clientX;
-    const dy = e.touches[0].clientY - e.touches[1].clientY;
-    const distance = Math.sqrt(dx*dx + dy*dy);
-
-    const cx = (e.touches[0].clientX + e.touches[1].clientX)/2;
-    const cy = (e.touches[0].clientY + e.touches[1].clientY)/2;
-
-    const zoom = distance / initialDistance;
-
-    const prevScale = panoramaGroup.scaleX;
-    panoramaGroup.scaleX *= zoom;
-    panoramaGroup.scaleY *= zoom;
-
-    panoramaGroup.left -= (cx - panoramaGroup.left) * (panoramaGroup.scaleX/prevScale - 1);
-    panoramaGroup.top -= (cy - panoramaGroup.top) * (panoramaGroup.scaleY/prevScale - 1);
-
-    panoramaGroup.setCoords();
-    canvas.requestRenderAll();
-    initialDistance = distance;
-  } else if (e.touches.length === 1 && isDragging) {
-    const dx = e.touches[0].clientX - lastX;
-    const dy = e.touches[0].clientY - lastY;
+// Drag
+let isDragging = false, lastX = 0;
+canvas.on("mouse:down", e => { isDragging = true; lastX = e.e.clientX; });
+canvas.on("mouse:move", e => {
+    if (!isDragging) return;
+    const dx = e.e.clientX - lastX;
     panoramaGroup.left += dx;
-    panoramaGroup.top += dy;
     panoramaGroup.setCoords();
     canvas.requestRenderAll();
-    lastX = e.touches[0].clientX;
-    lastY = e.touches[0].clientY;
-  }
+    lastX = e.e.clientX;
+});
+canvas.on("mouse:up", () => isDragging = false);
+
+// Zoom
+canvas.on("mouse:wheel", e => {
+    e.e.preventDefault();
+    const zoomFactor = e.e.deltaY < 0 ? 1.05 : 0.95;
+    panoramaGroup.scaleX *= zoomFactor;
+    panoramaGroup.scaleY *= zoomFactor;
+    panoramaGroup.setCoords();
+    canvas.requestRenderAll();
+});
+
+// Touch drag & pinch
+let lastTouchX = 0, pinchDist = 0, startScale = 1;
+function getDist(t) { return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY); }
+
+canvas.upperCanvasEl.addEventListener("touchstart", e => {
+    if (e.touches.length === 1) lastTouchX = e.touches[0].clientX;
+    if (e.touches.length === 2) { pinchDist = getDist(e.touches); startScale = panoramaGroup.scaleX; }
 }, { passive: false });
 
-canvas.upperCanvasEl.addEventListener('touchend', e => {
-  if (e.touches.length < 2) initialDistance = 0;
-  if (e.touches.length === 0) isDragging = false;
+canvas.upperCanvasEl.addEventListener("touchmove", e => {
+    e.preventDefault();
+    if (e.touches.length === 1) {
+        let dx = e.touches[0].clientX - lastTouchX;
+        panoramaGroup.left += dx;
+        panoramaGroup.setCoords();
+        canvas.requestRenderAll();
+        lastTouchX = e.touches[0].clientX;
+    }
+    if (e.touches.length === 2) {
+        const newDist = getDist(e.touches);
+        const zoomFactor = newDist / pinchDist;
+        panoramaGroup.scaleX = startScale * zoomFactor;
+        panoramaGroup.scaleY = startScale * zoomFactor;
+        panoramaGroup.setCoords();
+        canvas.requestRenderAll();
+    }
+}, { passive: false });
+
+// Colofon
+function openColofon(hs) {
+    const panel = document.getElementById("colofon");
+    const content = document.getElementById("colofon-content");
+
+    content.innerHTML = `
+        <h2>Catalogusnummer: ${hs.catalogusnummer}</h2>
+        <p>${hs.beschrijving}</p>
+        ${hs.extra_fotos ? `<img src="${hs.extra_fotos}" alt="Extra Foto">` : ''}
+    `;
+    panel.classList.add("open");
+}
+
+document.getElementById("close-colofon").addEventListener("click", () => {
+    document.getElementById("colofon").classList.remove("open");
 });
 
-// --------------------
-// Window resize
-// --------------------
-window.addEventListener('resize', () => {
-  canvas.setWidth(window.innerWidth);
-  canvas.setHeight(window.innerHeight);
-  canvas.requestRenderAll();
-});
+// Canvas resize
+function resizeCanvas() {
+    const wrapper = document.querySelector(".canvas-wrapper");
+    canvas.setWidth(wrapper.clientWidth);
+    canvas.setHeight(wrapper.clientHeight);
+    canvas.requestRenderAll();
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
