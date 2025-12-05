@@ -27,7 +27,7 @@
         </p>
     </div>
 
-    <a href="index.html"><button class="next-page-button">Ga door</button></a>
+    <a href="index.php"><button class="next-page-button">Ga door</button></a>
 
 
 

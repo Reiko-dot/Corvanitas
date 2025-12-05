@@ -59,7 +59,7 @@
 
 <div class="overlay-content">
     <h1>Panorama van Utrecht</h1>
-    <a href="short-info.html"><button>Start</button></a>
+    <a href="short-info.php"><button>Start</button></a>
 </div>
 
 

@@ -1,64 +1,80 @@
 html, body {
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    height: 100%;
-    width: 100%;
-    background-color: rgb(210,210,210);
-    font-family: Arial, sans-serif;
+    margin:0;
+    padding:0;
+    overflow:hidden;
+    height:100%;
+    width:100%;
+    background:#ddd;
 }
 
 header {
-    background-color: white;
-    height: 50px;
-    padding: 5px 15px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    display: flex;
-    align-items: center;
+    background-color:white;
+    height:50px;
+    padding:5px 15px;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+    display:flex;
+    align-items:center;
 }
 
 .logo {
-    height: 40px;
-    width: auto;
+    height:40px;
+    width:auto;
 }
 
 .canvas-wrapper {
-    width: 100%;
-    height: calc(100% - 50px);
-    overflow: hidden;
-    touch-action: none;
-    position: relative;
+    width:100%;
+    height:calc(100% - 50px);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:#eee;
 }
 
 canvas {
-    display: block;
+    display:block;
 }
 
+/* Colofon sliding panel */
 #colofon {
-    position: fixed;
-    right: -350px;
-    top: 50px;
-    width: 350px;
-    height: calc(100% - 50px);
-    background: white;
-    box-shadow: -4px 0 10px rgba(0,0,0,0.2);
-    transition: right 0.3s;
-    padding: 15px;
-    overflow-y: auto;
-    z-index: 1000;
+    position:fixed;
+    top:0;
+    right:-390px;
+    width:350px;
+    height:100%;
+    background:white;
+    box-shadow:-2px 0 5px rgba(0,0,0,0.3);
+    transition:right 0.3s ease;
+    padding:20px;
+    overflow-y:auto;
+    z-index:10;
 }
 
-#colofon.open {
-    right: 0;
-}
-
-#colofon img {
-    max-width: 100%;
-    margin-top: 10px;
-}
+#colofon.open { right:0; }
 
 #close-colofon {
-    margin-top: 10px;
-    padding: 5px 10px;
-    cursor: pointer;
+    background:none;
+    border:none;
+    font-size:30px;
+    cursor:pointer;
+    position:absolute;
+    top:10px;
+    right:5px;
+}
+
+/* Progress bar */
+#progress-bar {
+    position:fixed;
+    bottom:20px;
+    left:200px;
+    right:200px;
+    height:8px;
+    background:rgba(0,0,0,0.2);
+    border-radius:4px;
+}
+
+#progress-fill {
+    width:0%;
+    height:100%;
+    background:#ff3b3b;
+    border-radius:4px;
 }
