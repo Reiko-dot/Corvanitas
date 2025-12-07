@@ -78,3 +78,34 @@ canvas {
     background:#ff3b3b;
     border-radius:4px;
 }
+
+
+.colofon-buttons {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.colofon-buttons .btn {
+    display: inline-block;
+    padding: 8px 15px;
+    border-radius: 6px;
+    text-decoration: none;
+    color: #fff;
+    background-color: #3498db;
+    text-align: center;
+    transition: background 0.3s ease;
+}
+
+.colofon-buttons .btn:hover {
+    background-color: #2980b9;
+}
+
+.colofon-buttons .delete-btn {
+    background-color: #e74c3c;
+}
+
+.colofon-buttons .delete-btn:hover {
+    background-color: #c0392b;
+}
+

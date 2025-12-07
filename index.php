@@ -19,8 +19,8 @@
 <!-- Colofon sliding panel -->
 <div id="colofon">
     <button id="close-colofon">&times;</button>
-    <div id="colofon-content">
-    </div>
+    <div id="colofon-content"></div>
+    
 </div>
 
 <!-- Progress bar -->
