@@ -1,14 +1,39 @@
 <?php
 header('Content-Type: application/json');
-include '../includes/db.php'; // adjust path if needed
+require "includes/db.php";
 
 try {
-    $stmt = $pdo->query("SELECT * FROM hotspots ORDER BY frame_index, hotspot_id");
+    $stmt = $pdo->prepare("
+        SELECT 
+            hotspot_id,
+            frame_index,
+            catalognummer,
+            beschrijving,
+            aanvulling,
+            x,
+            y
+        FROM hotspots
+        ORDER BY hotspot_id ASC
+    ");
+
+    $stmt->execute();
     $hotspots = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    echo json_encode($hotspots);
-} catch (PDOException $e) {
+    // Force numeric fields
+    foreach ($hotspots as &$h) {
+        $h['hotspot_id'] = (int)$h['hotspot_id'];
+        $h['frame_index'] = (int)$h['frame_index'];
+        $h['x'] = (float)$h['x'];
+        $h['y'] = (float)$h['y'];
+    }
+
+    echo json_encode($hotspots, JSON_NUMERIC_CHECK);
+    exit;
+
+} catch (Exception $e) {
     echo json_encode([
-        "error" => "Fout bij ophalen van hotspots: " . $e->getMessage()
+        "error" => "Database error: " . $e->getMessage()
     ]);
+    exit;
 }
+?>

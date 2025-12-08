@@ -1,51 +1,51 @@
 <?php
-include 'includes/db.php';  // your database connection
-session_start();
+header("Content-Type: application/json");
+require_once "../db.php";
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    $frame_index = trim($_POST['frame_index']);
-    $catalognummer = trim($_POST['catalognummer']);
-    $beschrijving = trim($_POST['beschrijving']);
-    $x = isset($_POST['x']) ? floatval($_POST['x']) : null;
-    $y = isset($_POST['y']) ? floatval($_POST['y']) : null;
-    $aanvulling = trim($_POST['aanvulling']);
-
-    if ($frame_index !== '' && $catalognummer !== '') {
-        try {
-            $stmt = $pdo->prepare("INSERT INTO hotspots (frame_index, catalognummer, beschrijving, x, y, aanvulling) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$frame_index, $catalognummer, $beschrijving, $x, $y, $aanvulling]);
-
-            $_SESSION['success_message'] = "Hotspot toegevoegd.";
-            header("Location: hotspots_list.php");
-            exit;
-
-        } catch (PDOException $e) {
-            $_SESSION['error_message'] = "Fout bij toevoegen: " . $e->getMessage();
-        }
-    } else {
-        $_SESSION['error_message'] = "Vul minimaal frame_index en catalognummer in.";
+// Required fields check
+$required = ["frame_index", "catalognummer", "x", "y"];
+foreach ($required as $field) {
+    if (!isset($_POST[$field]) || $_POST[$field] === "") {
+        echo json_encode(["error" => "Missing field: $field"]);
+        exit;
     }
 }
+
+$frame_index   = intval($_POST["frame_index"]);
+$catalognummer = trim($_POST["catalognummer"]);
+$beschrijving  = isset($_POST["beschrijving"]) ? trim($_POST["beschrijving"]) : "";
+$aanvulling    = isset($_POST["aanvulling"]) ? trim($_POST["aanvulling"]) : "";
+
+$x = floatval($_POST["x"]);  // stored relative to panoramaGroup.left
+$y = floatval($_POST["y"]);  // stored relative to panoramaGroup.top
+
+try {
+    $stmt = $pdo->prepare("
+        INSERT INTO hotspots 
+            (frame_index, catalognummer, beschrijving, aanvulling, x, y)
+        VALUES 
+            (:frame_index, :catalognummer, :beschrijving, :aanvulling, :x, :y)
+    ");
+
+    $stmt->execute([
+        ":frame_index"   => $frame_index,
+        ":catalognummer" => $catalognummer,
+        ":beschrijving"  => $beschrijving,
+        ":aanvulling"    => $aanvulling,
+        ":x"             => $x,
+        ":y"             => $y
+    ]);
+
+    $newId = $pdo->lastInsertId();
+
+    echo json_encode([
+        "success" => true,
+        "hotspot_id" => (int)$newId
+    ]);
+
+} catch (Exception $e) {
+    echo json_encode([
+        "error" => "Database error: " . $e->getMessage()
+    ]);
+}
 ?>
-<form method="post">
-    <label>Frame Index:</label>
-    <input type="number" name="frame_index" required>
-
-    <label>Catalognummer:</label>
-    <input type="text" name="catalognummer" required>
-
-    <label>Beschrijving:</label>
-    <textarea name="beschrijving"></textarea>
-
-    <label>X (optioneel):</label>
-    <input type="text" name="x">
-
-    <label>Y (optioneel):</label>
-    <input type="text" name="y">
-
-    <label>Aanvulling:</label>
-    <textarea name="aanvulling"></textarea>
-
-    <button type="submit">Toevoegen</button>
-</form>

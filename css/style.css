@@ -109,3 +109,18 @@ canvas {
     background-color: #c0392b;
 }
 
+
+#add-hotspot-btn.active {
+    opacity: 0.8;
+}
+
+#add-hotspot-form input, #add-hotspot-form textarea {
+    box-sizing: border-box;
+    padding: 5px;
+    margin-bottom: 5px;
+}
+
+#add-hotspot-form button {
+    cursor: pointer;
+}
+
