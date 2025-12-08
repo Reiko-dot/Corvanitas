@@ -1,4 +1,6 @@
-//================ Fabric Canvas Setup =================
+//==============================
+// Fabric canvas setup
+//==============================
 const canvas = new fabric.Canvas("panoramaCanvas", { selection: false, subTargetCheck: true });
 fabric.Object.prototype.objectCaching = false;
 
@@ -12,7 +14,9 @@ let hotspots = [];
 let addHotspotMode = false;
 let tempHotspot = null;
 
-//================ Resize Canvas =================
+//==============================
+// Resize canvas
+//==============================
 function resizeCanvas() {
     const wrapper = document.querySelector('.canvas-wrapper');
     canvas.setWidth(wrapper.clientWidth);
@@ -22,25 +26,31 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-//================ Load Single Image =================
+//==============================
+// Load single image
+//==============================
 function loadImage(url) {
     return new Promise((resolve, reject) => {
         fabric.Image.fromURL(url, img => img ? resolve(img) : reject(url), { crossOrigin: 'anonymous' });
     });
 }
 
-//================ Load Hotspots from DB =================
+//==============================
+// Load hotspots from DB
+//==============================
 async function loadHotspotsFromDB() {
     try {
-        const res = await fetch("api/loadhotspots.php");
+        const res = await fetch("loadhotspots.php");
         return await res.json();
     } catch (err) {
-        console.error("Failed to load hotspots:", err);
+        console.error("Failed to load hotspots", err);
         return [];
     }
 }
 
-//================ Load Panorama + Hotspots =================
+//==============================
+// Load panorama & hotspots
+//==============================
 async function loadPanorama() {
     const hotspotsFromDB = await loadHotspotsFromDB();
     let xPos = 0;
@@ -53,8 +63,9 @@ async function loadPanorama() {
             img.set({ left: xPos, top: 0, selectable: false });
             panoramaGroup.addWithUpdate(img);
 
-            // Add hotspots for this frame
-            hotspotsFromDB.filter(h => h.frame_index === i).forEach(hdb => {
+            // Place hotspots for this frame
+            const frameHotspots = hotspotsFromDB.filter(h => h.frame_index === i);
+            frameHotspots.forEach(hdb => {
                 const hotspot = new fabric.Circle({
                     left: xPos + hdb.x,
                     top: hdb.y,
@@ -64,22 +75,25 @@ async function loadPanorama() {
                     strokeWidth: 3,
                     originX: "center",
                     originY: "center",
-                    selectable: false, // not movable
+                    selectable: false, // not movable until editing
+                    lockMovementX: true,
+                    lockMovementY: true
                 });
+
                 hotspot.hotspotId = hdb.hotspot_id;
                 hotspot.on("mousedown", () => openColofon(hotspot.hotspotId));
                 canvas.add(hotspot);
 
                 hotspots.push({
                     hotspot,
-                    baseLeft: hdb.x,
+                    baseLeft: xPos + hdb.x,
                     baseTop: hdb.y
                 });
             });
 
-            xPos += img.width * scale;
+            xPos += img.getScaledWidth();
         } catch (err) {
-            console.error("Failed loading image", imageFiles[i], err);
+            console.error("Failed loading", imageFiles[i], err);
         }
     }
 
@@ -89,20 +103,24 @@ async function loadPanorama() {
 
     updateHotspots();
     canvas.requestRenderAll();
+    updateProgress();
 }
 
-//================ Update Hotspots =================
+//==============================
+// Update hotspot positions
+//==============================
 function updateHotspots() {
     const scale = panoramaGroup.scaleX || 1;
     hotspots.forEach(h => {
         h.hotspot.left = panoramaGroup.left + h.baseLeft * scale;
-        h.hotspot.top = panoramaGroup.top + h.baseTop * scale;
+        h.hotspot.top  = panoramaGroup.top + h.baseTop * scale;
         h.hotspot.setCoords();
     });
-    updateProgress();
 }
 
-//================ Add Hotspot Button =================
+//==============================
+// Add Hotspot Button
+//==============================
 const addHotspotBtn = document.createElement("button");
 addHotspotBtn.textContent = "Create New Hotspot";
 Object.assign(addHotspotBtn.style, {
@@ -122,10 +140,12 @@ document.body.appendChild(addHotspotBtn);
 addHotspotBtn.addEventListener("click", () => {
     addHotspotMode = true;
     addHotspotBtn.classList.add("active");
-    alert("Click on the panorama to place the hotspot.");
+    alert("Click anywhere on the panorama to place the hotspot.");
 });
 
-//================ Click Canvas to Place Hotspot =================
+//==============================
+// Click to place temporary hotspot
+//==============================
 canvas.on("mouse:down", e => {
     if (!addHotspotMode) return;
 
@@ -146,12 +166,13 @@ canvas.on("mouse:down", e => {
         originY: "center",
         selectable: false
     });
-
     canvas.add(tempHotspot);
     showAddForm(x, y);
 });
 
-//================ Show Add Hotspot Form =================
+//==============================
+// Add Hotspot Form
+//==============================
 function showAddForm(x, y) {
     const oldForm = document.getElementById("add-hotspot-form");
     if (oldForm) oldForm.remove();
@@ -185,14 +206,12 @@ function showAddForm(x, y) {
 
     document.getElementById("save-hotspot-btn").onclick = async () => {
         const catalognummer = document.getElementById("catalognummer").value.trim();
-        const beschrijving = document.getElementById("beschrijving").value.trim();
-        const aanvulling = document.getElementById("aanvulling").value.trim();
-
+        const beschrijving  = document.getElementById("beschrijving").value.trim();
+        const aanvulling    = document.getElementById("aanvulling").value.trim();
         if (!catalognummer) return alert("Catalognummer verplicht!");
 
-        // Compute frame index
-        let frame_index = 0;
-        let total = 0;
+        // Determine frame index
+        let frame_index = 0, total = 0;
         for (let i = 0; i < panoramaGroup._objects.length; i++) {
             const img = panoramaGroup._objects[i];
             total += img.getScaledWidth();
@@ -229,12 +248,17 @@ function showAddForm(x, y) {
             finalHotspot.on("mousedown", () => openColofon(finalHotspot.hotspotId));
             canvas.add(finalHotspot);
 
-            hotspots.push({ hotspot: finalHotspot, baseLeft: x - panoramaGroup.left, baseTop: y - panoramaGroup.top });
+            hotspots.push({
+                hotspot: finalHotspot,
+                baseLeft: x - panoramaGroup.left,
+                baseTop: y - panoramaGroup.top
+            });
 
             form.remove();
             addHotspotMode = false;
             addHotspotBtn.classList.remove("active");
             tempHotspot = null;
+
         } catch (err) {
             console.error(err);
             alert("Server error");
@@ -250,7 +274,9 @@ function showAddForm(x, y) {
     };
 }
 
-//================ Open Colofon =================
+//==============================
+// Open colofon
+//==============================
 async function openColofon(hotspotId) {
     const panel = document.getElementById("colofon");
     const content = document.getElementById("colofon-content");
@@ -261,10 +287,18 @@ async function openColofon(hotspotId) {
         const res = await fetch(`api/get_hotspot.php?id=${hotspotId}`);
         const text = await res.text();
         let data;
-        try { data = JSON.parse(text); } 
-        catch(e) { throw new Error("Invalid JSON: " + text); }
+        try {
+            data = JSON.parse(text);
+        } catch {
+            console.error("Invalid JSON from server:", text);
+            content.innerHTML = "Server fout: invalid response.";
+            return;
+        }
 
-        if (data.error) { content.innerHTML = `<h2>Error</h2><p>${data.error}</p>`; return; }
+        if (!data || data.error) {
+            content.innerHTML = `<h2>Error</h2><p>${data?.error || "Hotspot not found"}</p>`;
+            return;
+        }
 
         content.innerHTML = `
             <h2>${data.catalognummer}</h2>
@@ -285,20 +319,26 @@ document.getElementById("close-colofon").onclick = () => {
     document.getElementById("colofon").classList.remove("open");
 };
 
-//================ Drag Panorama =================
+//==============================
+// Drag panorama (smooth)
+//==============================
 let dragging = false, lastX = 0;
 canvas.on("mouse:down", e => { dragging = true; lastX = e.e.clientX; });
 canvas.on("mouse:up", () => dragging = false);
 canvas.on("mouse:move", e => {
     if (!dragging || addHotspotMode) return;
     const dx = e.e.clientX - lastX;
+    lastX = e.e.clientX;
     panoramaGroup.left += dx;
     panoramaGroup.setCoords();
-    lastX = e.e.clientX;
     updateHotspots();
+    updateProgress();
+    canvas.requestRenderAll();
 });
 
-//================ Zoom =================
+//==============================
+// Zoom
+//==============================
 canvas.on("mouse:wheel", e => {
     if (addHotspotMode) return;
     e.e.preventDefault();
@@ -313,16 +353,21 @@ canvas.on("mouse:wheel", e => {
     panoramaGroup.top = pointer.y - localY * newScale;
     panoramaGroup.setCoords();
     updateHotspots();
+    updateProgress();
+    canvas.requestRenderAll();
 });
 
-//================ Progress Bar =================
+//==============================
+// Progress bar
+//==============================
 function updateProgress() {
     const totalWidth = panoramaGroup.getScaledWidth();
     const current = -panoramaGroup.left;
-    let p = (current / totalWidth) * 100;
-    p = Math.max(0, Math.min(100, p));
+    let p = Math.max(0, Math.min(100, (current / totalWidth) * 100));
     document.getElementById("progress-fill").style.width = p + "%";
 }
 
-//================ Start =================
+//==============================
+// Start
+//==============================
 loadPanorama();
