@@ -1,39 +1,73 @@
 <?php
-header('Content-Type: application/json');
-require_once "../includes/db.php"; // adjust path correctly
+header("Content-Type: application/json");
+require_once __DIR__ . "/../includes/db.php";
 
-if (!isset($_GET["id"])) {
-    echo json_encode(["error" => "Missing hotspot id"]);
-    exit;
+// Manually parse query string from REQUEST_URI if QUERY_STRING is empty
+if (empty($_GET) && empty($_SERVER['QUERY_STRING']) && !empty($_SERVER['REQUEST_URI'])) {
+    $uri = $_SERVER['REQUEST_URI'];
+    if (strpos($uri, '?') !== false) {
+        $query = substr($uri, strpos($uri, '?') + 1);
+        parse_str($query, $_GET);
+    }
+} elseif (empty($_GET) && !empty($_SERVER['QUERY_STRING'])) {
+    parse_str($_SERVER['QUERY_STRING'], $_GET);
 }
 
-$id = intval($_GET["id"]);
+// Try to get id from various sources
+$id = null;
+
+// Check GET parameters first (most common for GET requests)
+if (!empty($_GET['id'])) {
+    $id = $_GET['id'];
+} elseif (!empty($_GET['hotspot_id'])) {
+    $id = $_GET['hotspot_id'];
+}
+
+// Check POST if GET didn't have it
+if ($id === null && !empty($_POST['id'])) {
+    $id = $_POST['id'];
+} elseif ($id === null && !empty($_POST['hotspot_id'])) {
+    $id = $_POST['hotspot_id'];
+}
+
+// Check JSON body
+if ($id === null) {
+    $raw = file_get_contents('php://input');
+    if (!empty($raw)) {
+        $json = json_decode($raw, true);
+        if (!empty($json['id'])) {
+            $id = $json['id'];
+        } elseif (!empty($json['hotspot_id'])) {
+            $id = $json['hotspot_id'];
+        }
+    }
+}
 
 try {
-    $stmt = $pdo->prepare("
-        SELECT hotspot_id, frame_index, catalognummer, beschrijving, aanvulling, x, y
-        FROM hotspots
-        WHERE hotspot_id = :id
-        LIMIT 1
-    ");
-    $stmt->execute([":id" => $id]);
-    $hotspot = $stmt->fetch(PDO::FETCH_ASSOC);
+    // If id is provided, get single hotspot
+    if ($id !== null && $id !== '') {
+        $id = intval($id);
+        $stmt = $pdo->prepare("SELECT * FROM hotspots WHERE hotspot_id = :id LIMIT 1");
+        $stmt->execute([":id" => $id]);
+        $hotspot = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$hotspot) {
-        echo json_encode(["error" => "Hotspot not found"]);
-        exit;
+        if (!$hotspot) {
+            http_response_code(404);
+            echo json_encode(["error" => "Hotspot not found"]);
+            exit;
+        }
+
+        echo json_encode($hotspot);
+    } else {
+        // If no id, return all hotspots
+        $stmt = $pdo->prepare("SELECT * FROM hotspots");
+        $stmt->execute();
+        $hotspots = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        echo json_encode($hotspots);
     }
-
-    // Make sure numeric fields are correct
-    $hotspot['hotspot_id'] = (int)$hotspot['hotspot_id'];
-    $hotspot['frame_index'] = (int)$hotspot['frame_index'];
-    $hotspot['x'] = (float)$hotspot['x'];
-    $hotspot['y'] = (float)$hotspot['y'];
-
-    echo json_encode($hotspot, JSON_NUMERIC_CHECK);
-    exit;
 } catch (Exception $e) {
-    echo json_encode(["error" => "Database error: ".$e->getMessage()]);
-    exit;
+    http_response_code(500);
+    echo json_encode(["error" => $e->getMessage()]);
 }
 ?>

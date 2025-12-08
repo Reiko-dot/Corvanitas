@@ -306,7 +306,7 @@ async function openColofon(hotspotId) {
             ${data.aanvulling ? `<p><i>${data.aanvulling}</i></p>` : ""}
             <div class="colofon-buttons">
                 <button onclick="location.href='api/update_hotspot.php?id=${data.hotspot_id}'">Edit</button>
-                <button onclick="location.href='api/delete_hotspot.php?id=${data.hotspot_id}'">Delete</button>
+                <button onclick="deleteHotspot(${data.hotspot_id})">Delete</button>
             </div>
         `;
     } catch (err) {
@@ -318,6 +318,36 @@ async function openColofon(hotspotId) {
 document.getElementById("close-colofon").onclick = () => {
     document.getElementById("colofon").classList.remove("open");
 };
+
+// Delete hotspot via AJAX and return to main page on success
+async function deleteHotspot(id) {
+    if (!confirm('Delete hotspot ' + id + '?')) return;
+    try {
+        const res = await fetch(`api/delete_hotspot.php?id=${id}`);
+        const data = await res.json();
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        // remove from canvas & hotspots array if present
+        const idx = hotspots.findIndex(h => (h.hotspot.hotspotId == id || h.hotspot.hotspotId == String(id)));
+        if (idx !== -1) {
+            canvas.remove(hotspots[idx].hotspot);
+            hotspots.splice(idx, 1);
+            updateHotspots();
+            canvas.requestRenderAll();
+        }
+
+        // Close panel then redirect to main index
+        document.getElementById("colofon").classList.remove("open");
+        // navigate back to main page (adjust if your admin page differs)
+        location.href = 'index.php';
+    } catch (err) {
+        console.error(err);
+        alert('Server error during delete');
+    }
+}
 
 //==============================
 // Drag panorama (smooth)

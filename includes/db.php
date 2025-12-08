@@ -7,7 +7,7 @@ $password = "";         // empty for XAMPP/MAMP/WAMP usually
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    // echo "Connected successfully"; // uncomment to test
+    // echo "Connected successfully"; 
 } catch (PDOException $e) {
     echo "Connection failed: " . $e->getMessage();
 }
