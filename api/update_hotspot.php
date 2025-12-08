@@ -9,17 +9,46 @@ if (!isset($_GET['id'])) {
 
 $id = intval($_GET['id']);
 
+// Upload directory
+$uploadDir = '../images/hotspots/';
+if (!is_dir($uploadDir)) {
+    mkdir($uploadDir, 0755, true);
+}
+
+// Helper function to handle file upload or URL
+function getImagePath($fileInput, $urlInput, $uploadDir) {
+    // If file was uploaded, save it
+    if (!empty($_FILES[$fileInput]['name'])) {
+        $file = $_FILES[$fileInput];
+        $fileName = basename($file['name']);
+        $filePath = $uploadDir . time() . '_' . $fileName;
+        
+        if (move_uploaded_file($file['tmp_name'], $filePath)) {
+            return 'images/hotspots/' . time() . '_' . $fileName;
+        }
+    }
+    // Otherwise use the URL if provided
+    return trim($_POST[$urlInput] ?? '');
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $catalognummer = trim($_POST['catalognummer']);
     $beschrijving = trim($_POST['beschrijving']);
+    
+    // Handle images (file upload or URL)
+    $image_url = getImagePath('image_file', 'image_url', $uploadDir);
+    $image_url_2 = getImagePath('image_file_2', 'image_url_2', $uploadDir);
+    $image_url_3 = getImagePath('image_file_3', 'image_url_3', $uploadDir);
+    $image_url_4 = getImagePath('image_file_4', 'image_url_4', $uploadDir);
+    
     $x = isset($_POST['x']) ? floatval($_POST['x']) : null;
     $y = isset($_POST['y']) ? floatval($_POST['y']) : null;
     $aanvulling = trim($_POST['aanvulling']);
 
     if ($catalognummer !== '') {
         try {
-            $stmt = $pdo->prepare("UPDATE hotspots SET catalognummer = ?, beschrijving = ?, x = ?, y = ?, aanvulling = ? WHERE hotspot_id = ?");
-            $stmt->execute([$catalognummer, $beschrijving, $x, $y, $aanvulling, $id]);
+            $stmt = $pdo->prepare("UPDATE hotspots SET catalognummer = ?, beschrijving = ?, image_url = ?, image_url_2 = ?, image_url_3 = ?, image_url_4 = ?, x = ?, y = ?, aanvulling = ? WHERE hotspot_id = ?");
+            $stmt->execute([$catalognummer, $beschrijving, $image_url, $image_url_2, $image_url_3, $image_url_4, $x, $y, $aanvulling, $id]);
 
             $_SESSION['success_message'] = "Hotspot bijgewerkt.";
             header("Location: ../index.php"); // redirect to main page
@@ -43,12 +72,32 @@ if (!$hotspot) {
 }
 ?>
 
-<form method="post">
+<form method="post" enctype="multipart/form-data">
     <label>Catalognummer:</label>
     <input type="text" name="catalognummer" value="<?= htmlspecialchars($hotspot['catalognummer']) ?>" required>
 
     <label>Beschrijving:</label>
     <textarea name="beschrijving"><?= htmlspecialchars($hotspot['beschrijving']) ?></textarea>
+
+    <label>Afbeelding URL:</label>
+    <input type="text" name="image_url" value="<?= htmlspecialchars($hotspot['image_url'] ?? '') ?>" placeholder="of upload bestand hieronder...">
+    <label>Of upload afbeelding 1:</label>
+    <input type="file" name="image_file" accept="image/*">
+
+    <label>Afbeelding URL 2 (optioneel):</label>
+    <input type="text" name="image_url_2" value="<?= htmlspecialchars($hotspot['image_url_2'] ?? '') ?>" placeholder="of upload bestand hieronder...">
+    <label>Of upload afbeelding 2:</label>
+    <input type="file" name="image_file_2" accept="image/*">
+
+    <label>Afbeelding URL 3 (optioneel):</label>
+    <input type="text" name="image_url_3" value="<?= htmlspecialchars($hotspot['image_url_3'] ?? '') ?>" placeholder="of upload bestand hieronder...">
+    <label>Of upload afbeelding 3:</label>
+    <input type="file" name="image_file_3" accept="image/*">
+
+    <label>Afbeelding URL 4 (optioneel):</label>
+    <input type="text" name="image_url_4" value="<?= htmlspecialchars($hotspot['image_url_4'] ?? '') ?>" placeholder="of upload bestand hieronder...">
+    <label>Of upload afbeelding 4:</label>
+    <input type="file" name="image_file_4" accept="image/*">
 
     <label>X (optioneel):</label>
     <input type="text" name="x" value="<?= htmlspecialchars($hotspot['x']) ?>">

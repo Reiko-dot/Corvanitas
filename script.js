@@ -113,7 +113,7 @@ function updateHotspots() {
     const scale = panoramaGroup.scaleX || 1;
     hotspots.forEach(h => {
         h.hotspot.left = panoramaGroup.left + h.baseLeft * scale;
-        h.hotspot.top  = panoramaGroup.top + h.baseTop * scale;
+        h.hotspot.top = panoramaGroup.top + h.baseTop * scale;
         h.hotspot.setCoords();
     });
 }
@@ -129,7 +129,7 @@ Object.assign(addHotspotBtn.style, {
     left: "20px",
     zIndex: 1000,
     padding: "10px 15px",
-    backgroundColor: "#ff3b3b",
+    backgroundColor: "#0ca3c5ff",
     color: "#fff",
     border: "none",
     borderRadius: "5px",
@@ -184,30 +184,33 @@ function showAddForm(x, y) {
         top: "20px",
         right: "20px",
         backgroundColor: "#fff",
-        padding: "15px",
-        borderRadius: "8px",
-        boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+        padding: "20px",
+        borderRadius: "10px",
+        boxShadow: "0 6px 20px rgba(0,0,0,0.15)",
         zIndex: 2000,
-        width: "250px"
+        width: "280px",
+        fontFamily: "Arial, sans-serif"
     });
 
     form.innerHTML = `
-        <h3>Nieuwe Hotspot</h3>
-        <label>Catalognummer</label>
-        <input type="text" id="catalognummer" style="width:100%;margin-bottom:8px;">
-        <label>Beschrijving</label>
-        <textarea id="beschrijving" style="width:100%;margin-bottom:8px;"></textarea>
-        <label>Aanvulling (optioneel)</label>
-        <textarea id="aanvulling" style="width:100%;margin-bottom:8px;"></textarea>
-        <button id="save-hotspot-btn" style="margin-right:5px;">Opslaan</button>
-        <button id="cancel-hotspot-btn">Annuleren</button>
+        <h3 style="margin:0 0 15px 0;color:#333;font-weight:bold;font-size:18px;">Nieuwe Hotspot</h3>
+        <label style="font-weight:600;display:block;margin-top:12px;color:#333;">Catalognummer</label>
+        <input type="text" id="catalognummer" style="width:100%;padding:8px;margin-top:5px;border:1px solid #ccc;border-radius:6px;box-sizing:border-box;font-family:Arial;">
+        <label style="font-weight:600;display:block;margin-top:12px;color:#333;">Beschrijving</label>
+        <textarea id="beschrijving" style="width:100%;padding:8px;margin-top:5px;border:1px solid #ccc;border-radius:6px;box-sizing:border-box;min-height:80px;font-family:Arial;"></textarea>
+        <label style="font-weight:600;display:block;margin-top:12px;color:#333;">Aanvulling (optioneel)</label>
+        <textarea id="aanvulling" style="width:100%;padding:8px;margin-top:5px;border:1px solid #ccc;border-radius:6px;box-sizing:border-box;min-height:60px;font-family:Arial;"></textarea>
+        <div style="display:flex;gap:8px;margin-top:15px;">
+            <button id="save-hotspot-btn" style="flex:1;padding:10px;background:#ff3b3b;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-family:Arial;">Opslaan</button>
+            <button id="cancel-hotspot-btn" style="flex:1;padding:10px;background:#999;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-family:Arial;">Annuleren</button>
+        </div>
     `;
     document.body.appendChild(form);
 
     document.getElementById("save-hotspot-btn").onclick = async () => {
         const catalognummer = document.getElementById("catalognummer").value.trim();
-        const beschrijving  = document.getElementById("beschrijving").value.trim();
-        const aanvulling    = document.getElementById("aanvulling").value.trim();
+        const beschrijving = document.getElementById("beschrijving").value.trim();
+        const aanvulling = document.getElementById("aanvulling").value.trim();
         if (!catalognummer) return alert("Catalognummer verplicht!");
 
         // Determine frame index
@@ -301,10 +304,16 @@ async function openColofon(hotspotId) {
         }
 
         content.innerHTML = `
-            <h2>${data.catalognummer}</h2>
-            <p>${data.beschrijving}</p>
-            ${data.aanvulling ? `<p><i>${data.aanvulling}</i></p>` : ""}
-            <div class="colofon-buttons">
+            <h2 style="font-weight:bold;margin-bottom:12px;font-family:Arial,sans-serif;">${data.catalognummer}</h2>
+            <p style="font-weight:600;line-height:1.6;margin:10px 0;font-family:Arial,sans-serif;">${data.beschrijving}</p>
+            ${data.aanvulling ? `<p style="font-weight:500;font-style:italic;margin:10px 0;color:#555;font-family:Arial,sans-serif;">${data.aanvulling}</p>` : ""}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:15px;">
+                ${data.image_url ? `<img src="${data.image_url}" alt="Image 1" style="width:100%;max-height:250px;object-fit:contain;border-radius:6px;cursor:pointer;" onclick="openImageModal('${data.image_url}')">` : ""}
+                ${data.image_url_2 ? `<img src="${data.image_url_2}" alt="Image 2" style="width:100%;max-height:250px;object-fit:contain;border-radius:6px;cursor:pointer;" onclick="openImageModal('${data.image_url_2}')">` : ""}
+                ${data.image_url_3 ? `<img src="${data.image_url_3}" alt="Image 3" style="width:100%;max-height:250px;object-fit:contain;border-radius:6px;cursor:pointer;" onclick="openImageModal('${data.image_url_3}')">` : ""}
+                ${data.image_url_4 ? `<img src="${data.image_url_4}" alt="Image 4" style="width:100%;max-height:250px;object-fit:contain;border-radius:6px;cursor:pointer;" onclick="openImageModal('${data.image_url_4}')">` : ""}
+            </div>
+            <div class="colofon-buttons" style="margin-top:15px; ">
                 <button onclick="location.href='api/update_hotspot.php?id=${data.hotspot_id}'">Edit</button>
                 <button onclick="deleteHotspot(${data.hotspot_id})">Delete</button>
             </div>
@@ -318,6 +327,26 @@ async function openColofon(hotspotId) {
 document.getElementById("close-colofon").onclick = () => {
     document.getElementById("colofon").classList.remove("open");
 };
+
+// Image modal for fullscreen view
+function openImageModal(src) {
+    const modal = document.createElement('div');
+    modal.id = 'image-modal';
+    modal.style.cssText = `
+        position:fixed;top:0;left:0;width:100%;height:100%;
+        background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;
+        z-index:3000;cursor:pointer;
+    `;
+    modal.innerHTML = `<img src="${src}" style="max-width:90%;max-height:90%;object-fit:contain;border-radius:8px;">`;
+    document.body.appendChild(modal);
+
+    modal.onclick = () => modal.remove();
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && document.getElementById('image-modal')) {
+            document.getElementById('image-modal').remove();
+        }
+    });
+}
 
 // Delete hotspot via AJAX and return to main page on success
 async function deleteHotspot(id) {
@@ -388,8 +417,10 @@ canvas.on("mouse:wheel", e => {
 });
 
 //==============================
-// Progress bar
+// Progress bar (interactive)
 //==============================
+let progressDragging = false;
+
 function updateProgress() {
     const totalWidth = panoramaGroup.getScaledWidth();
     const current = -panoramaGroup.left;
@@ -397,7 +428,68 @@ function updateProgress() {
     document.getElementById("progress-fill").style.width = p + "%";
 }
 
+// Progress bar click/tap to jump
+function initProgressBar() {
+    const progressBar = document.getElementById("progress-bar");
+    if (!progressBar) return;
+
+    function getPercentFromEvent(e) {
+        const rect = progressBar.getBoundingClientRect();
+        let clientX = e.clientX;
+        if (e.touches) {
+            clientX = e.touches[0].clientX;
+        }
+        const clickX = clientX - rect.left;
+        return Math.max(0, Math.min(100, (clickX / rect.width) * 100));
+    }
+
+    function handleProgressClick(e) {
+        if (progressDragging) return;
+        const percent = getPercentFromEvent(e);
+        setProgressPosition(percent);
+    }
+
+    function handleProgressDragStart(e) {
+        progressDragging = true;
+        const percent = getPercentFromEvent(e);
+        setProgressPosition(percent);
+    }
+
+    function handleProgressDragMove(e) {
+        if (!progressDragging) return;
+        e.preventDefault();
+        const percent = getPercentFromEvent(e);
+        setProgressPosition(percent);
+    }
+
+    function handleProgressDragEnd() {
+        progressDragging = false;
+    }
+
+    progressBar.addEventListener('click', handleProgressClick);
+    progressBar.addEventListener('mousedown', handleProgressDragStart);
+    progressBar.addEventListener('touchstart', handleProgressDragStart, { passive: false });
+    document.addEventListener('mousemove', handleProgressDragMove);
+    document.addEventListener('touchmove', handleProgressDragMove, { passive: false });
+    document.addEventListener('mouseup', handleProgressDragEnd);
+    document.addEventListener('touchend', handleProgressDragEnd);
+}
+
+function setProgressPosition(percent) {
+    const totalWidth = panoramaGroup.getScaledWidth();
+    const canvasWidth = canvas.getWidth();
+    const newLeft = -(totalWidth * percent / 100) + canvasWidth / 2;
+    panoramaGroup.left = Math.max(-(totalWidth - canvasWidth), Math.min(0, newLeft));
+    panoramaGroup.setCoords();
+    updateHotspots();
+    updateProgress();
+    canvas.requestRenderAll();
+}
+
+
+
 //==============================
 // Start
 //==============================
 loadPanorama();
+initProgressBar();

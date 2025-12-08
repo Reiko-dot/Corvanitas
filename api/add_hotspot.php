@@ -45,19 +45,7 @@ else {
 
 if ($frame === null || $x === null || $y === null || $frame === '' || $x === '' || $y === '') {
     http_response_code(400);
-    $debug = [
-        'error' => 'Missing required fields: frame_index, x, y',
-        'method' => $_SERVER['REQUEST_METHOD'] ?? null,
-        'content_type' => $_SERVER['CONTENT_TYPE'] ?? null,
-        '_GET' => $_GET,
-        '_POST' => $_POST,
-        '_FILES' => $_FILES,
-        'raw_input' => file_get_contents('php://input')
-    ];
-    if (function_exists('getallheaders')) {
-        $debug['headers'] = getallheaders();
-    }
-    echo json_encode(['error' => 'Missing required fields: frame_index, x, y', 'debug' => $debug]);
+    echo json_encode(["error" => "Missing required fields: frame_index, x, y"]);
     exit;
 }
 
